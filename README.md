@@ -6,7 +6,9 @@ A productive Go web framework.
 TODO: 
 - db seed
 - application.js
+- CSRF
 - Upgrade to bootstrap 5 https://getbootstrap.com/docs/5.3/getting-started/webpack/
+- Try Vite
 - cli for project generation
 - require login
 - tests in models (with in-code fixture example)
