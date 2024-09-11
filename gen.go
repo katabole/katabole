@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,6 +48,8 @@ var (
 			if titleName == "" {
 				titleName = strings.Title(repoName)
 			}
+
+			fmt.Printf("Creating %s... ", repoName)
 
 			if _, err := os.Stat(repoName); err == nil {
 				return fmt.Errorf("directory '%s' already exists", repoName)
@@ -106,7 +107,18 @@ var (
 			if err := os.Rename(clonePath, repoName); err != nil {
 				return err
 			}
-			log.Printf("Created %s", repoName)
+
+			fmt.Printf(`Done!
+
+Next:
+	cd ` + repoName + ` && task setup
+
+Ensure you have the following installed:
+  - Go https://go.dev/doc/install
+  - Task https://taskfile.dev/installation/
+  - Docker https://www.docker.com/products/docker-desktop/
+`)
+
 			return nil
 		},
 	}
