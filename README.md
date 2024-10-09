@@ -2,7 +2,8 @@
     <img src="images/katabole-logo-rounded.jpg" alt="Katabole" width="200">
 </p>
 
-# Katabole (ka-ta-buh-LAY) - A productive, timeless Go web framework.
+# Katabole
+_(ka-ta-buh-LAY) - A productive, timeless Go web framework._
 
 Katabole offers a foundation generator for building your Go web application. `katabole gen` creates a project for you
 from the [kbexample](https://github.com/katabole/kbexample) template, which puts together the following:
