@@ -1,5 +1,5 @@
 <p align="center" dir="auto">
-    <img src="images/katabole-logo.jpg" alt="Katabole" width="200" style="border-radius: 45px;">
+    <img src="images/katabole-logo-rounded.jpg" alt="Katabole" width="200">
 </p>
 
 # Katabole (ka-ta-buh-LAY) - A productive, timeless Go web framework.
