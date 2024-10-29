@@ -20,24 +20,6 @@ conventions. As a developer you learn how it fits together; it's transparent, no
 It's productive because in a matter of minutes, you're up and running. It's timeless because the code is yours. Katabole
 may upgrade or swap out a thing or two (rarely, I hope), but your code (at least the Go part) will continue to build.
 
-<div>
-    <a href="https://www.loom.com/share/e6c942497c9d489d9d9e4e745afe942e">
-      <p>Katabole Gen Demo</p>
-    </a>
-    <a href="https://www.loom.com/share/e6c942497c9d489d9d9e4e745afe942e">
-      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/e6c942497c9d489d9d9e4e745afe942e-ce0056a2c1f49916-full-play.gif">
-    </a>
-</div>
-
-<div>
-    <a href="https://www.loom.com/share/bea7d6d6932a42708b9d469d066fe572">
-      <p>Katabole Walkthrough</p>
-    </a>
-    <a href="https://www.loom.com/share/bea7d6d6932a42708b9d469d066fe572">
-      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/bea7d6d6932a42708b9d469d066fe572-1d3ae4e919ae7864-full-play.gif">
-    </a>
-</div>
-
 ## Quick Start
 
 Prerequisites: [Go](https://go.dev/doc/install), [Node](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [Task](https://taskfile.dev/installation/), and [Docker](https://docs.docker.com/get-docker/).
@@ -54,6 +36,13 @@ task dev
 # See what else you can do built-in
 task -l
 ```
+
+## Videos
+
+### Katabole Gen Demo
+| Katabole Gen Demo | Katabole Walkthrough | Katabole Development Flow |
+| - | - | - |
+|<a href="https://www.loom.com/share/e6c942497c9d489d9d9e4e745afe942e"><img style="width:300px;" src="https://cdn.loom.com/sessions/thumbnails/e6c942497c9d489d9d9e4e745afe942e-ce0056a2c1f49916-full-play.gif"></a>|<a href="https://www.loom.com/share/bea7d6d6932a42708b9d469d066fe572"><img style="width:300px;" src="https://cdn.loom.com/sessions/thumbnails/bea7d6d6932a42708b9d469d066fe572-1d3ae4e919ae7864-full-play.gif"></a>|<a href="https://www.loom.com/share/ba11decf8a8e486695735a8c8de03383"><img style="width:300px;" src="https://cdn.loom.com/sessions/thumbnails/ba11decf8a8e486695735a8c8de03383-7694c4f39bc26bc1-full-play.gif"></a>|
 
 ## Contributing
 
