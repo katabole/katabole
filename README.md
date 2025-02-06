@@ -12,6 +12,7 @@ from the [kbexample](https://github.com/katabole/kbexample) template, which puts
 - [Atlas](https://atlasgo.io/) for SQL DB management
 - [Task](https://taskfile.dev) for task management
 - [Docker](https://www.docker.com/get-started/) and [Air](https://github.com/air-verse/air) for smooth development
+- [psql](https://www.postgresql.org/download/)
 - Packages in [katabole](https://github.com/katabole) and [gorilla](github.com/gorilla), plus a few [others](https://github.com/katabole/kbexample/blob/main/go.mod)
 
 Katabole is unique because it's hardly a framework. It provides the generator, some well-defined stable packages, and
@@ -25,7 +26,8 @@ may upgrade or swap out a thing or two (rarely, I hope), but your code (at least
 Prerequisites: [Go](https://go.dev/doc/install), [Node](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [Task](https://taskfile.dev/installation/), and [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
-go install github.com/katabole/katabole
+# Note: this installs katabole to ~/go/bin/ by default. You can add this to your path via `export PATH=$PATH:~/go/bin/`
+go install github.com/katabole/katabole@latest
 katabole gen --import-path github.com/myuser/myapp --title-name MyApp
 cd myapp
 task setup
