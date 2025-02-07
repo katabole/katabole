@@ -40,12 +40,16 @@ task dev
 task -l
 ```
 
-## Videos
+## Demo Videos
 
-### Katabole Gen Demo
 | Katabole Gen Demo | Katabole Walkthrough | Katabole Development Flow |
 | - | - | - |
 |<a href="https://www.loom.com/share/e6c942497c9d489d9d9e4e745afe942e"><img style="width:300px;" src="https://cdn.loom.com/sessions/thumbnails/e6c942497c9d489d9d9e4e745afe942e-ce0056a2c1f49916-full-play.gif"></a>|<a href="https://www.loom.com/share/bea7d6d6932a42708b9d469d066fe572"><img style="width:300px;" src="https://cdn.loom.com/sessions/thumbnails/bea7d6d6932a42708b9d469d066fe572-1d3ae4e919ae7864-full-play.gif"></a>|<a href="https://www.loom.com/share/ba11decf8a8e486695735a8c8de03383"><img style="width:300px;" src="https://cdn.loom.com/sessions/thumbnails/ba11decf8a8e486695735a8c8de03383-7694c4f39bc26bc1-full-play.gif"></a>|
+
+## Learning
+
+- [Katabole Frequently Asked Questions](FAQ.md), including answers to the "why" questions
+- [Guidance for first-time Go developers](FIRST-TIME.md)
 
 ## Contributing
 
