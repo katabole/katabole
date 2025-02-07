@@ -25,6 +25,7 @@ may upgrade or swap out a thing or two (rarely, I hope), but your code (at least
 
 Prerequisites: [Go](https://go.dev/doc/install), [Node](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [Task](https://taskfile.dev/installation/), and [Docker](https://docs.docker.com/get-docker/).
 
+Here's how to create an app named "MyApp", with the import path "github.com/myuser/myapp":
 ```bash
 # Note: this installs katabole to ~/go/bin/ by default. You can add this to your path via `export PATH=$PATH:~/go/bin/`
 go install github.com/katabole/katabole@latest
