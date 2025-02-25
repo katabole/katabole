@@ -7,20 +7,20 @@ Here they are, in priority order:
 1. Maintainability over time
 2. Productivity through transparency
 
-I've observed many web frameworks suffer faults in these two areas.
+I've observed many web frameworks suffer in these two areas.
 
-In the area of maintainability, picking up cool new technologies can be very tempting. Many web developers aren't
-experienced engineers and don't see a problem with using the latest and greatest thing. But doing so leads to churn as
-things keep changing or packages receive breaking updates. Part of the wisdom of Go has been consistent
-backward-compatibility, and with Katabole I hope to accomplish a similar thing by choosing technologies that have
-achieved stability. In other words, boring technology rocks. As a [Go Proverb](https://go-proverbs.github.io/) says, "a
-little copying is better than a little dependency."
+In the area of maintainability, picking up cool new technologies can be very tempting. Many web developers don't see a
+problem with using the latest and greatest thing. But doing so leads to churn as things keep changing or packages
+receive breaking updates. Part of the wisdom of Go has been consistent backward-compatibility, and with Katabole I hope
+to accomplish a similar thing by favoing technologies that have achieved stability and avoiding unnecessary
+dependencies. In other words, boring technology rocks. As a [Go Proverb](https://go-proverbs.github.io/) says, "a little
+copying is better than a little dependency."
 
 As for productivity, many frameworks take DRY (Don't Repeat Yourself) to the limit. This creates lots of magic. In
 theory it makes possible very fast development by an expert framework user. In practice it causes a maintenance burden
 when those magic parts must change. More importantly, it confuses new developers and hides things they really should
-learn. I like to think of Katabole as a learning framework; though you can get going with app generation, you'll need to
-touch and learn what each part does. This is a good.
+learn. I like to think of Katabole as a learning framework; though you can get going with app generation, over time
+you'll learn what each part does. This is good.
 
 ## Why pick technology ___?
 
@@ -38,13 +38,9 @@ handler signature](https://pkg.go.dev/net/http#Handle), meaning even Chi could b
 try using just the [built-in ServeMux](https://pkg.go.dev/net/http#ServeMux) but found it too limiting. Routing is a
 pretty key feature needed for web and API applications.
 
-#### Webpack
+#### Vite
 
-When I started this, Webpack was the most popular bundler, and in that sense the most stable. But I'm extremely eager to
-get rid of it and likely move to something else.
-
-As for the Javascript we do have, frankly some of it was simply inherited from past projects and I'd still like to cut
-it down to the essentials. The packages in use there are just pragmatic choices.
+Vite is modern and, more importantly, seems to be here to stay.
 
 #### Docker
 
@@ -76,10 +72,6 @@ Note that I have no intention of using its HCL syntax, just plain SQL.
 For projects too limited by features available in the free version, like views and functions, try
 [Goose](https://github.com/pressly/goose).
 
-#### Air
-
-Air seemed better than the alternatives, but would be easy to replace.
-
 ## Why the name?
 
 Katabole is a Greek word referring to laying down a foundation, as in "foundation of the world". It was unique and had a
@@ -94,3 +86,15 @@ repository, using it as a template by replacing all instances of "KBExample" wit
 
 You can create issues in the relevant repository, but we have a central project board
 [here](https://github.com/orgs/katabole/projects/1).
+
+## What inspired the project?
+
+I needed a framework for quickly building web applications. It needed to handle using a SQL database, be approachable
+for less-experienced developers, and satisfy the design goals noted above. I didn't find anything that satisfied these
+requirements.
+
+In the Go community the phrase "just use the standard library" is used often, and there's merit to that. But I think
+it's worth appreciating how few software developers are skilled enough to build a production web application that way.
+In my opinion [Buffalo](https://github.com/gobuffalo/buffalo) was the best attempt at this, but made itself a little too
+difficult to maintain with the design ideas it imported from frameworks like Ruby on Rails. I'll be proud if Katabole
+can make web development as approachable as Buffalo did.

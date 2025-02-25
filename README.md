@@ -8,7 +8,7 @@ _(ka-ta-buh-LAY) - A productive, timeless Go web framework._
 Katabole offers a foundation generator for building your Go web application. `katabole gen` creates a project for you
 from the [kbexample](https://github.com/katabole/kbexample) template, which puts together the following:
 - [Chi](https://go-chi.io/#/README) for routing
-- [Webpack](https://webpack.js.org/) for front-end assets
+- [Vite](https://vite.dev/) for front-end assets
 - [Atlas](https://atlasgo.io/) for SQL DB management
 - [Task](https://taskfile.dev) for task management
 - [Docker](https://www.docker.com/get-started/) and [Air](https://github.com/air-verse/air) for smooth development
