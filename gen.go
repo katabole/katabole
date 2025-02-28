@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,8 @@ func init() {
 	genCmd.Flags().StringP("import-path", "n", "", "Name to use for renaming")
 	genCmd.MarkFlagRequired("import-path")
 	genCmd.Flags().StringP("title-name", "t", "", "Name for the app in title case")
+	genCmd.Flags().StringP("template-repository", "r", "https://github.com/katabole/kbexample", "Git repository URL to clone as a template")
+	genCmd.Flags().StringP("template-ref", "f", "", "Git reference (commit hash or tag) to check out after cloning")
 	rootCmd.AddCommand(genCmd)
 }
 
@@ -49,8 +52,6 @@ var (
 				titleName = strings.Title(repoName)
 			}
 
-			fmt.Printf("Creating %s... ", repoName)
-
 			if _, err := os.Stat(repoName); err == nil {
 				return fmt.Errorf("directory '%s' already exists", repoName)
 			}
@@ -62,14 +63,42 @@ var (
 			defer os.RemoveAll(tmpPath)
 
 			clonePath := filepath.Join(tmpPath, repoName)
-			_, err = git.PlainClone(clonePath, false, &git.CloneOptions{
-				URL:          "https://github.com/katabole/kbexample",
+
+			templateRepo, err := cmd.Flags().GetString("template-repository")
+			if err != nil {
+				return err
+			}
+			repo, err := git.PlainClone(clonePath, false, &git.CloneOptions{
+				URL:          templateRepo,
 				SingleBranch: true,
 				Depth:        1,
 			})
 			if err != nil {
 				return err
 			}
+
+			templateRef, err := cmd.Flags().GetString("template-ref")
+			if err != nil {
+				return err
+			}
+
+			// User specified a specific commit to use
+			if templateRef != "" {
+				wt, err := repo.Worktree()
+				if err != nil {
+					return err
+				}
+				err = wt.Checkout(&git.CheckoutOptions{
+					Hash: plumbing.NewHash(templateRef),
+				})
+				if err != nil {
+					return fmt.Errorf("failed to checkout ref %s: %w", templateRef, err)
+				}
+
+				fmt.Printf("Checked out template repository at %s\n", templateRef)
+			}
+
+			fmt.Printf("Creating %s from template %s...\n", repoName, templateRepo)
 			os.RemoveAll(filepath.Join(clonePath, ".git"))
 
 			err = filepath.WalkDir(clonePath, func(path string, d fs.DirEntry, err error) error {
