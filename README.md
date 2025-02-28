@@ -50,6 +50,7 @@ task -l
 
 - [Katabole Frequently Asked Questions](FAQ.md), including answers to the "why" questions
 - [Guidance for first-time Go developers](FIRST-TIME.md)
+- Get help on our [Google Group](https://groups.google.com/g/katabole-users)
 
 ## Contributing
 
