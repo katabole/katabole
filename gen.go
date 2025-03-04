@@ -53,7 +53,7 @@ var (
 				titleName = strings.Title(repoName)
 			}
 
-			fmt.Printf("Creating %s ...", repoName)
+			fmt.Printf("Creating %s... ", repoName)
 
 			if _, err := os.Stat(repoName); err == nil {
 				return fmt.Errorf("directory '%s' already exists", repoName)
@@ -94,8 +94,6 @@ var (
 				err = checkoutTemplateRef(wt, templateRef)
 				if err != nil {
 					return fmt.Errorf("error checking out: %v", err)
-				} else {
-					fmt.Printf("Successfully checked out %s\n", templateRef)
 				}
 			}
 
@@ -153,28 +151,26 @@ Ensure you have the following installed:
 	}
 )
 
+// git-go lacks a direct way to checkout a "ref"
+// manually try it as a hash, then a branch, then a tag
 func checkoutTemplateRef(wt *git.Worktree, templateRef string) error {
-	// Try checking out using the hash first
 	if err := wt.Checkout(&git.CheckoutOptions{
 		Hash: plumbing.NewHash(templateRef),
 	}); err == nil {
 		return nil
 	}
 
-	// Try checking out as a branch name
 	if err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(templateRef),
 	}); err == nil {
 		return nil
 	}
 
-	// Try checking out as a tag
 	if err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewTagReferenceName(templateRef),
 	}); err == nil {
 		return nil
 	}
 
-	// If all attempts fail, return an error
 	return fmt.Errorf("failed to checkout %s: not a valid hash, branch, or tag", templateRef)
 }
