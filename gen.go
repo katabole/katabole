@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,9 @@ func init() {
 	genCmd.Flags().StringP("import-path", "n", "", "Name to use for renaming")
 	genCmd.MarkFlagRequired("import-path")
 	genCmd.Flags().StringP("title-name", "t", "", "Name for the app in title case")
+	genCmd.MarkFlagRequired("title-name")
+	genCmd.Flags().String("template-repository", "https://github.com/katabole/kbexample", "Git repository URL to clone as a template")
+	genCmd.Flags().String("template-ref", "", "Git reference (commit hash or tag) to check out after cloning")
 	rootCmd.AddCommand(genCmd)
 }
 
@@ -62,14 +66,37 @@ var (
 			defer os.RemoveAll(tmpPath)
 
 			clonePath := filepath.Join(tmpPath, repoName)
-			_, err = git.PlainClone(clonePath, false, &git.CloneOptions{
-				URL:          "https://github.com/katabole/kbexample",
+
+			templateRepo, err := cmd.Flags().GetString("template-repository")
+			if err != nil {
+				return err
+			}
+			repo, err := git.PlainClone(clonePath, false, &git.CloneOptions{
+				URL:          templateRepo,
 				SingleBranch: true,
 				Depth:        1,
 			})
 			if err != nil {
 				return err
 			}
+
+			templateRef, err := cmd.Flags().GetString("template-ref")
+			if err != nil {
+				return err
+			}
+
+			// User specified a specific commit(hash), branch, or tag to use
+			if templateRef != "" {
+				wt, err := repo.Worktree()
+				if err != nil {
+					return err
+				}
+				err = checkoutTemplateRef(wt, templateRef)
+				if err != nil {
+					return fmt.Errorf("error checking out: %v", err)
+				}
+			}
+
 			os.RemoveAll(filepath.Join(clonePath, ".git"))
 
 			err = filepath.WalkDir(clonePath, func(path string, d fs.DirEntry, err error) error {
@@ -123,3 +150,27 @@ Ensure you have the following installed:
 		},
 	}
 )
+
+// git-go lacks a direct way to checkout a "ref"
+// manually try it as a hash, then a branch, then a tag
+func checkoutTemplateRef(wt *git.Worktree, templateRef string) error {
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Hash: plumbing.NewHash(templateRef),
+	}); err == nil {
+		return nil
+	}
+
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(templateRef),
+	}); err == nil {
+		return nil
+	}
+
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewTagReferenceName(templateRef),
+	}); err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("failed to checkout %s: not a valid hash, branch, or tag", templateRef)
+}
