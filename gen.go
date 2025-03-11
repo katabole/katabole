@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -135,6 +136,10 @@ var (
 				return err
 			}
 
+			if err := checkNecessaryBinaries(); err != nil {
+				return err
+			}
+
 			fmt.Printf(`Done!
 
 Next:
@@ -173,4 +178,39 @@ func checkoutTemplateRef(wt *git.Worktree, templateRef string) error {
 	}
 
 	return fmt.Errorf("failed to checkout %s: not a valid hash, branch, or tag", templateRef)
+}
+
+// Calling checkApp() to find out if go, docker, postsql, task, node are installed already to before running set up
+func checkNecessaryBinaries() error {
+	if err := checkApp("go", "version"); err != nil {
+		return fmt.Errorf("go is not installed, to install it see https://go.dev/doc/install ")
+	}
+
+	if err := checkApp("docker", "version"); err != nil {
+		return fmt.Errorf("docker is not installed, to install it see https://docs.docker.com/get-docker")
+	}
+
+	if err := checkApp("node", "-v"); err != nil {
+		return fmt.Errorf("node is not installed, to install it see https://docs.npmjs.com/downloading-and-installing-node-js-and-npm")
+	}
+
+	if err := checkApp("psql", "-V"); err != nil {
+		return fmt.Errorf("psql is not installed, to install it see https://www.postgresql.org/download/")
+
+	}
+	if err := checkApp("task", "-V"); err != nil {
+		return fmt.Errorf("task is not installed, to install it see https://taskfile.dev/installation/")
+	}
+	return nil
+}
+
+// check if the necessary apps are installed to run $task setup
+func checkApp(app, command string) error {
+	path, err := exec.LookPath(app)
+	if err != nil {
+		return fmt.Errorf(" %s not found : %v", app, err)
+	}
+
+	fmt.Printf("%s is installed: %s\n", app, path)
+	return nil
 }
