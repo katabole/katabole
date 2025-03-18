@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
@@ -180,37 +182,49 @@ func checkoutTemplateRef(wt *git.Worktree, templateRef string) error {
 	return fmt.Errorf("failed to checkout %s: not a valid hash, branch, or tag", templateRef)
 }
 
-// Calling checkApp() to find out if go, docker, postsql, task, node are installed already to before running set up
+// checkNecessaryBinaries calls checkApp and returns err
+// Tries to find excutable files on user's machine and return an ErrorOrNil
+// with links to install if the dependencies' excutables are not found
 func checkNecessaryBinaries() error {
-	if err := checkApp("go", "version"); err != nil {
-		return fmt.Errorf("go is not installed, to install it see https://go.dev/doc/install ")
+
+	var result *multierror.Error
+
+	if err := checkApp("go version"); err != nil {
+		err = errors.New("go is not installed, to install it see https://go.dev/doc/install")
+		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("docker", "version"); err != nil {
-		return fmt.Errorf("docker is not installed, to install it see https://docs.docker.com/get-docker")
+	if err := checkApp("docker version"); err != nil {
+		err = errors.New("docker is not installed, to install it see https://docs.docker.com/get-docker")
+		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("node", "-v"); err != nil {
-		return fmt.Errorf("node is not installed, to install it see https://docs.npmjs.com/downloading-and-installing-node-js-and-npm")
+	if err := checkApp("node -v"); err != nil {
+		err = errors.New("node is not installed, to install it see  https://docs.npmjs.com/downloading-and-installing-node-js-and-npm")
+		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("psql", "-V"); err != nil {
-		return fmt.Errorf("psql is not installed, to install it see https://www.postgresql.org/download/")
+	if err := checkApp("psql -V"); err != nil {
+		err = errors.New("psql is not installed, to install it see https://www.postgresql.org/download")
+		result = multierror.Append(result, err)
+	}
 
+	if err := checkApp("task --version"); err != nil {
+		err = errors.New("task is not installed, to install it see  https://taskfile.dev/installation")
+		result = multierror.Append(result, err)
 	}
-	if err := checkApp("task", "-V"); err != nil {
-		return fmt.Errorf("task is not installed, to install it see https://taskfile.dev/installation/")
-	}
-	return nil
+	return result.ErrorOrNil()
 }
 
-// check if the necessary apps are installed to run $task setup
-func checkApp(app, command string) error {
-	path, err := exec.LookPath(app)
-	if err != nil {
-		return fmt.Errorf(" %s not found : %v", app, err)
+// checkApp looks for executables to run on user's local machine
+// and return nil if already installed and err otherwise
+func checkApp(args string) error {
+	cmd := exec.Command(args)
+	if errors.Is(cmd.Err, exec.ErrDot) {
+		cmd.Err = nil
 	}
-
-	fmt.Printf("%s is installed: %s\n", app, path)
+	if err := cmd.Run(); err != nil {
+		return (err)
+	}
 	return nil
 }
