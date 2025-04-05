@@ -221,7 +221,7 @@ func checkNecessaryBinaries() error {
 func checkApp(args string) error {
 	cmd := exec.Command(args)
 	if err := cmd.Run(); err != nil {
-		return (err)
+		return err
 	}
 	return nil
 }
