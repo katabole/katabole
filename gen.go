@@ -220,9 +220,6 @@ func checkNecessaryBinaries() error {
 // and return nil if already installed and err otherwise
 func checkApp(args string) error {
 	cmd := exec.Command(args)
-	if errors.Is(cmd.Err, exec.ErrDot) {
-		cmd.Err = nil
-	}
 	if err := cmd.Run(); err != nil {
 		return (err)
 	}
