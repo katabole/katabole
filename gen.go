@@ -46,7 +46,7 @@ var (
 			}
 			repoName := parts[2]
 			// reponame only have alphanumerics, dashes or underscores
-			if !regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString(repoName) {
+			if !ValidateRepoName(repoName) {
 				return fmt.Errorf("repository name can only contain letters, numbers, dashes or underscores")
 			}
 			repoNameUnderscores := strings.ReplaceAll(repoName, "-", "_")
@@ -228,6 +228,12 @@ func checkApp(args string) error {
 		return err
 	}
 	return nil
+}
+
+// ValidateRepoName returns true if the repo name contains only alphanumerics, dashes, or underscores.
+func ValidateRepoName(repoName string) bool {
+	re := regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	return re.MatchString(repoName)
 }
 
 // applyReplacements runs all of our placeholder swaps on the given content.

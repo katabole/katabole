@@ -2,8 +2,9 @@ package main
 
 import (
 	"bytes"
-	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestApplyReplacements(t *testing.T) {
@@ -14,50 +15,49 @@ psql -d kbexample_dev
 psql -d kb_example_dev
 `)
 
-	// 1) No-dash case: repoName == repoNameUnder, so we expect two identical replacements.
-	out := applyReplacements(template,
+	// --- No-dash case: repoName == repoNameUnder (both "myapp").
+
+	out := applyReplacements(
+		template,
 		"github.com/foo/myapp", // importPath
 		"MyApp",                // titleName
 		"myapp",                // repoName
 		"myapp",                // repoNameUnderscores
 	)
-	count := bytes.Count(out, []byte("myapp_dev"))
-	if count != 2 {
-		t.Errorf("no-dash: expected 2 occurrences of \"myapp_dev\", got %d\nOutput:\n%s",
-			count, out)
-	}
+	// Since both placeholders become "myapp_dev", we expect exactly two occurrences.
+	rawCount := bytes.Count(out, []byte("myapp_dev"))
+	assert.Equal(t, 2, rawCount, "no-dash: expected exactly 2 occurrences of \"myapp_dev\"")
 
-	// 2) With-dash case: expect one raw and one underscored
-	out = applyReplacements(template,
-		"github.com/foo/my-app",
-		"MyApp",
-		"my-app",
-		"my_app",
+	// --- With-dash case: repoName="my-app", repoNameUnderscores="my_app".
+
+	out = applyReplacements(
+		template,
+		"github.com/foo/my-app", // importPath
+		"MyApp",                 // titleName
+		"my-app",                // repoName
+		"my_app",                // repoNameUnderscores
 	)
-	if c := bytes.Count(out, []byte("my-app_dev")); c != 1 {
-		t.Errorf("with-dash: expected 1 occurrence of \"my-app_dev\", got %d\nOutput:\n%s",
-			c, out)
-	}
-	if c := bytes.Count(out, []byte("my_app_dev")); c != 1 {
-		t.Errorf("with-dash: expected 1 occurrence of \"my_app_dev\", got %d\nOutput:\n%s",
-			c, out)
-	}
+	// Expect one occurrence of "my-app_dev"
+	assert.Equal(t, 1,
+		bytes.Count(out, []byte("my-app_dev")),
+		"with-dash: expected 1 occurrence of \"my-app_dev\"")
+
+	// Expect one occurrence of "my_app_dev"
+	assert.Equal(t, 1,
+		bytes.Count(out, []byte("my_app_dev")),
+		"with-dash: expected 1 occurrence of \"my_app_dev\"")
 }
 
 func TestRepoNameValidation(t *testing.T) {
-	re := regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
-
+	// Valid names should pass ValidateRepoName
 	valid := []string{"abc", "a_b-c", "A1_2-3"}
 	for _, s := range valid {
-		if !re.MatchString(s) {
-			t.Errorf("should be valid: %q", s)
-		}
+		assert.Truef(t, ValidateRepoName(s), "expected %q to be valid", s)
 	}
 
+	// Invalid names should fail
 	invalid := []string{"bad$name", " space", "dot.name"}
 	for _, s := range invalid {
-		if re.MatchString(s) {
-			t.Errorf("should be invalid: %q", s)
-		}
+		assert.Falsef(t, ValidateRepoName(s), "expected %q to be invalid", s)
 	}
 }
