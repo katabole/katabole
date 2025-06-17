@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -44,6 +45,11 @@ var (
 				return fmt.Errorf("import path must be in the form 'github.com/<user>/<app>'")
 			}
 			repoName := parts[2]
+			// reponame only have alphanumerics, dashes or underscores
+			if !ValidateRepoName(repoName) {
+				return fmt.Errorf("repository name can only contain letters, numbers, dashes or underscores")
+			}
+			repoNameUnderscores := strings.ReplaceAll(repoName, "-", "_")
 
 			titleName, err := cmd.Flags().GetString("title-name")
 			if err != nil {
@@ -121,9 +127,7 @@ var (
 					return err
 				}
 
-				data = bytes.ReplaceAll(data, []byte("github.com/katabole/kbexample"), []byte(importPath))
-				data = bytes.ReplaceAll(data, []byte("KBExample"), []byte(titleName))
-				data = bytes.ReplaceAll(data, []byte("kbexample"), []byte(repoName))
+				data = applyReplacements(data, importPath, titleName, repoName, repoNameUnderscores)
 				if err := os.WriteFile(path, []byte(data), info.Mode()); err != nil {
 					return err
 				}
@@ -224,4 +228,19 @@ func checkApp(args string) error {
 		return err
 	}
 	return nil
+}
+
+// ValidateRepoName returns true if the repo name contains only alphanumerics, dashes, or underscores.
+func ValidateRepoName(repoName string) bool {
+	re := regexp.MustCompile(`^[A-Za-z0-9_-]+$`)
+	return re.MatchString(repoName)
+}
+
+// applyReplacements runs all of our placeholder swaps on the given content.
+func applyReplacements(content []byte, importPath, titleName, repoName, repoNameUnderscores string) []byte {
+	content = bytes.ReplaceAll(content, []byte("github.com/katabole/kbexample"), []byte(importPath))
+	content = bytes.ReplaceAll(content, []byte("KBExample"), []byte(titleName))
+	content = bytes.ReplaceAll(content, []byte("kb_example"), []byte(repoNameUnderscores))
+	content = bytes.ReplaceAll(content, []byte("kbexample"), []byte(repoName))
+	return content
 }
