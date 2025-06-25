@@ -15,8 +15,8 @@ from the [kbexample](https://github.com/katabole/kbexample) template, which puts
 - [psql](https://www.postgresql.org/download/)
 - Packages in [katabole](https://github.com/katabole) and [gorilla](github.com/gorilla), plus a few [others](https://github.com/katabole/kbexample/blob/main/go.mod)
 
-Katabole is unique because it's hardly a framework. It provides the generator, some well-defined stable packages, and
-conventions. As a developer you learn how it fits together; it's transparent, not magic.
+Katabole is unique because it's a reference architecture more than a framework. It provides the generator, some well-defined
+stable packages, and conventions. As a developer you learn how it fits together; it's transparent, not magic.
 
 It's productive because in a matter of minutes, you're up and running. It's timeless because the code is yours. Katabole
 may upgrade or swap out a thing or two (rarely, I hope), but your code (at least the Go part) will continue to build.
