@@ -81,9 +81,8 @@ var (
 				return err
 			}
 			repo, err := git.PlainClone(clonePath, false, &git.CloneOptions{
-				URL:          templateRepo,
-				SingleBranch: true,
-				Depth:        1,
+				URL:  templateRepo,
+				Tags: git.AllTags,
 			})
 			if err != nil {
 				return err
