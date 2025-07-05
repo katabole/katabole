@@ -122,36 +122,6 @@ func TestGenerateFromKbexample(t *testing.T) {
 	}
 }
 
-func TestGenerateFromTestRepo(t *testing.T) {
-	tmpDir := t.TempDir()
-	t.Logf("Generating project into: %s", tmpDir)
-	outputPath := filepath.Join(tmpDir, "test-output")
-	defer runCommand(outputPath, "docker", "compose", "down")
-
-	err := runCommand(tmpDir, "katabole", "gen",
-		"--import-path", "github.com/katabole/test-output",
-		"--title-name", "TestOutput",
-		"--template-repository", "https://github.com/katabole/katabole-gen-testing",
-		"--template-ref", "v0.1.0",
-		"-n", "github.com/katabole/test-output",
-	)
-	if err != nil {
-		t.Fatalf("katabole gen failed: %v", err)
-	}
-
-	// Validate one of the placeholder replacements
-	content, err := os.ReadFile(filepath.Join(outputPath, "main.go"))
-	if err != nil {
-		t.Fatalf("failed to read generated file: %v", err)
-	}
-	if !bytes.Contains(content, []byte("github.com/katabole/test-output")) {
-		t.Errorf("expected import path replacement in main.go")
-	}
-	if bytes.Contains(content, []byte("github.com/katabole/kbexample")) {
-		t.Errorf("unreplaced import path found in main.go")
-	}
-}
-
 // Happy-path flag tests for the katabole-gen-testing template
 
 func TestGenerateFromGenTesting_DefaultBranch(t *testing.T) {
