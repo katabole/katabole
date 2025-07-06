@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,6 +10,21 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+var kataboleBin string
+
+func TestMain(m *testing.M) {
+	// build the katabole CLI locally
+	bin := "katabole"
+	cmd := exec.Command("go", "build", "-o", bin, ".")
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to build katabole CLI: %v\n", err)
+		os.Exit(1)
+	}
+	// use the built binary path
+	kataboleBin = filepath.Join(".", bin)
+	os.Exit(m.Run())
+}
 
 func TestApplyReplacements(t *testing.T) {
 	template := []byte(`
@@ -79,7 +95,7 @@ func TestGenerateFromKbexample(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "kbexample")
 	defer runCommand(outputPath, "docker", "compose", "down")
 
-	err := runCommand(tmpDir, "katabole", "gen",
+	err := runCommand(tmpDir, kataboleBin, "gen",
 		"--import-path", "github.com/LingEnOwO/kbexample",
 		"--title-name", "KBExample",
 		"--template-repository", "https://github.com/LingEnOwO/kbexample",
@@ -129,7 +145,7 @@ func TestGenerateFromGenTesting_DefaultBranch(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "test-output")
 
 	// Generate against the default branch (no --template-ref)
-	err := runCommand(tmpDir, "katabole", "gen",
+	err := runCommand(tmpDir, kataboleBin, "gen",
 		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
 		"--import-path", "github.com/katabole/test-output",
 		"--title-name", "TestOutput",
@@ -154,7 +170,7 @@ func TestGenerateFromGenTesting_Branch(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "test-output")
 
 	// Generate against the named branch “test-branch”
-	err := runCommand(tmpDir, "katabole", "gen",
+	err := runCommand(tmpDir, kataboleBin, "gen",
 		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
 		"--template-ref", "test-branch",
 		"--import-path", "github.com/katabole/test-output",
@@ -179,7 +195,7 @@ func TestGenerateFromGenTesting_Tag(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "test-output")
 
 	// Generate against the v0.1.0 tag
-	err := runCommand(tmpDir, "katabole", "gen",
+	err := runCommand(tmpDir, kataboleBin, "gen",
 		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
 		"--template-ref", "v0.1.0",
 		"--import-path", "github.com/katabole/test-output",
