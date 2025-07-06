@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
@@ -81,11 +82,20 @@ var (
 				return err
 			}
 			repo, err := git.PlainClone(clonePath, false, &git.CloneOptions{
-				URL:          templateRepo,
-				SingleBranch: true,
-				Depth:        1,
+				URL:  templateRepo,
+				Tags: git.AllTags,
 			})
 			if err != nil {
+				return err
+			}
+
+			err = repo.Fetch(&git.FetchOptions{
+				RemoteName: "origin",
+				Tags:       git.AllTags,
+				RefSpecs:   []config.RefSpec{"refs/heads/*:refs/remotes/origin/*"},
+				Force:      true,
+			})
+			if err != nil && err != git.NoErrAlreadyUpToDate {
 				return err
 			}
 
@@ -173,6 +183,12 @@ func checkoutTemplateRef(wt *git.Worktree, templateRef string) error {
 
 	if err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(templateRef),
+	}); err == nil {
+		return nil
+	}
+
+	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName("refs/remotes/origin/" + templateRef),
 	}); err == nil {
 		return nil
 	}
