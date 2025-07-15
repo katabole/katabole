@@ -21,8 +21,15 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "failed to build katabole CLI: %v\n", err)
 		os.Exit(1)
 	}
-	// use the built binary path
-	kataboleBin = filepath.Join(".", bin)
+	// determine absolute path to the built binary so we can execute it from any working dir
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get working directory: %v\n", err)
+		os.Exit(1)
+	}
+	kataboleBin = filepath.Join(wd, bin)
+	fmt.Println("[TestMain] kataboleBin =", kataboleBin)
+
 	os.Exit(m.Run())
 }
 
