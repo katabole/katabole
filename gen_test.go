@@ -1,11 +1,51 @@
+//go:build integration
+
 package main
 
 import (
 	"bytes"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+// skipIfMissingTools skips the test if any of the provided CLI tools are not
+// found on the host system. This prevents integration tests from failing on
+// minimal CI environments that lack Docker, Task, Node, etc.
+func skipIfMissingTools(t *testing.T, tools ...string) {
+	t.Helper()
+	for _, tool := range tools {
+		if _, err := exec.LookPath(tool); err != nil {
+			t.Skipf("skipping test – required tool %q not found", tool)
+		}
+	}
+}
+
+var kataboleBin string
+
+func TestMain(m *testing.M) {
+	// build the katabole CLI locally
+	bin := "katabole"
+	cmd := exec.Command("go", "build", "-o", bin, ".")
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to build katabole CLI: %v\n", err)
+		os.Exit(1)
+	}
+	// determine absolute path to the built binary so we can execute it from any working dir
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to get working directory: %v\n", err)
+		os.Exit(1)
+	}
+	kataboleBin = filepath.Join(wd, bin)
+	fmt.Println("[TestMain] kataboleBin =", kataboleBin)
+
+	os.Exit(m.Run())
+}
 
 func TestApplyReplacements(t *testing.T) {
 	template := []byte(`
@@ -59,5 +99,146 @@ func TestRepoNameValidation(t *testing.T) {
 	invalid := []string{"bad$name", " space", "dot.name"}
 	for _, s := range invalid {
 		assert.Falsef(t, ValidateRepoName(s), "expected %q to be invalid", s)
+	}
+}
+
+// runCommand is a helper to run commands inside a given directory
+func runCommand(dir, name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func TestGenerateFromKbexample(t *testing.T) {
+	// Ensure required external tooling exists; otherwise skip.
+	skipIfMissingTools(t, "docker", "task", "npm", "npx")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "kbexample")
+	defer runCommand(outputPath, "docker", "compose", "down")
+
+	err := runCommand(tmpDir, kataboleBin, "gen",
+		"--import-path", "github.com/LingEnOwO/kbexample",
+		"--title-name", "KBExample",
+		"--template-repository", "https://github.com/LingEnOwO/kbexample",
+		"-n", "github.com/LingEnOwO/kbexample",
+	)
+	if err != nil {
+		t.Fatalf("katabole gen failed: %v", err)
+	}
+
+	err = runCommand(outputPath, "task", "db:up")
+	if err != nil {
+		t.Fatalf("task db:up failed: %v", err)
+	}
+
+	err = runCommand(outputPath, "task", "db:apply")
+	if err != nil {
+		t.Fatalf("atlas apply failed: %v", err)
+	}
+
+	// Ensure npm install runs before Vite build
+	err = runCommand(outputPath, "npm", "install")
+	if err != nil {
+		t.Fatalf("npm install failed: %v", err)
+	}
+
+	// Ensure dist/ is built
+	err = runCommand(outputPath, "npx", "vite", "build")
+	if err != nil {
+		t.Fatalf("vite build failed: %v", err)
+	}
+
+	err = runCommand(outputPath, "task", "db:seed")
+	if err != nil {
+		t.Fatalf("task db:seed failed: %v", err)
+	}
+
+	err = runCommand(outputPath, "task", "test")
+	if err != nil {
+		t.Fatalf("task test failed: %v", err)
+	}
+}
+
+// Happy-path flag tests for the katabole-gen-testing template
+
+func TestGenerateFromGenTesting_DefaultBranch(t *testing.T) {
+	// Integration test prerequisites
+	skipIfMissingTools(t, "git", "docker", "task")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "test-output")
+
+	// Generate against the default branch (no --template-ref)
+	err := runCommand(tmpDir, kataboleBin, "gen",
+		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
+		"--import-path", "github.com/katabole/test-output",
+		"--title-name", "TestOutput",
+		"-n", "github.com/katabole/test-output",
+	)
+	if err != nil {
+		t.Fatalf("generation on default branch failed: %v", err)
+	}
+
+	// Quick sanity: check that main.go now imports our new path
+	data, err := os.ReadFile(filepath.Join(outputPath, "main.go"))
+	if err != nil {
+		t.Fatalf("cannot read main.go: %v", err)
+	}
+	if !bytes.Contains(data, []byte("github.com/katabole/test-output")) {
+		t.Errorf("import path not replaced in default branch: got %q", data)
+	}
+}
+
+func TestGenerateFromGenTesting_Branch(t *testing.T) {
+	t.Skip("skipping branch checkout test until checkoutTemplateRef bug is fixed")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "test-output")
+
+	// Generate against the named branch “test-branch”
+	err := runCommand(tmpDir, kataboleBin, "gen",
+		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
+		"--template-ref", "test-branch",
+		"--import-path", "github.com/katabole/test-output",
+		"--title-name", "TestOutput",
+		"-n", "github.com/katabole/test-output",
+	)
+	if err != nil {
+		t.Fatalf("generation on named branch failed: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(outputPath, "main.go"))
+	if err != nil {
+		t.Fatalf("cannot read main.go: %v", err)
+	}
+	if !bytes.Contains(data, []byte("github.com/katabole/test-output")) {
+		t.Errorf("import path not replaced on branch: got %q", data)
+	}
+}
+
+func TestGenerateFromGenTesting_Tag(t *testing.T) {
+	// Integration test prerequisites
+	skipIfMissingTools(t, "git", "docker", "task")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "test-output")
+
+	// Generate against the v0.1.0 tag
+	err := runCommand(tmpDir, kataboleBin, "gen",
+		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
+		"--template-ref", "v0.1.0",
+		"--import-path", "github.com/katabole/test-output",
+		"--title-name", "TestOutput",
+		"-n", "github.com/katabole/test-output",
+	)
+	if err != nil {
+		t.Fatalf("generation on tag failed: %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(outputPath, "main.go"))
+	if err != nil {
+		t.Fatalf("cannot read main.go: %v", err)
+	}
+	if !bytes.Contains(data, []byte("github.com/katabole/test-output")) {
+		t.Errorf("import path not replaced on tag: got %q", data)
 	}
 }

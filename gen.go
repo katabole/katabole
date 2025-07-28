@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
@@ -81,11 +82,20 @@ var (
 				return err
 			}
 			repo, err := git.PlainClone(clonePath, false, &git.CloneOptions{
-				URL:          templateRepo,
-				SingleBranch: true,
-				Depth:        1,
+				URL:  templateRepo,
+				Tags: git.AllTags,
 			})
 			if err != nil {
+				return err
+			}
+
+			err = repo.Fetch(&git.FetchOptions{
+				RemoteName: "origin",
+				Tags:       git.AllTags,
+				RefSpecs:   []config.RefSpec{"refs/heads/*:refs/remotes/origin/*"},
+				Force:      true,
+			})
+			if err != nil && err != git.NoErrAlreadyUpToDate {
 				return err
 			}
 
@@ -178,6 +188,12 @@ func checkoutTemplateRef(wt *git.Worktree, templateRef string) error {
 	}
 
 	if err := wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.ReferenceName("refs/remotes/origin/" + templateRef),
+	}); err == nil {
+		return nil
+	}
+
+	if err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewTagReferenceName(templateRef),
 	}); err == nil {
 		return nil
@@ -193,27 +209,27 @@ func checkNecessaryBinaries() error {
 
 	var result *multierror.Error
 
-	if err := checkApp("go version"); err != nil {
+	if err := checkApp("go", []string{"version"}); err != nil {
 		err = errors.New("go is not installed, to install it see https://go.dev/doc/install")
 		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("docker version"); err != nil {
+	if err := checkApp("docker", []string{"version"}); err != nil {
 		err = errors.New("docker is not installed, to install it see https://docs.docker.com/get-docker")
 		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("node -v"); err != nil {
+	if err := checkApp("node", []string{"-v"}); err != nil {
 		err = errors.New("node is not installed, to install it see  https://docs.npmjs.com/downloading-and-installing-node-js-and-npm")
 		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("psql -V"); err != nil {
+	if err := checkApp("psql", []string{"-V"}); err != nil {
 		err = errors.New("psql is not installed, to install it see https://www.postgresql.org/download")
 		result = multierror.Append(result, err)
 	}
 
-	if err := checkApp("task --version"); err != nil {
+	if err := checkApp("task", []string{"--version"}); err != nil {
 		err = errors.New("task is not installed, to install it see  https://taskfile.dev/installation")
 		result = multierror.Append(result, err)
 	}
@@ -222,8 +238,8 @@ func checkNecessaryBinaries() error {
 
 // checkApp looks for executables to run on user's local machine
 // and return nil if already installed and err otherwise
-func checkApp(args string) error {
-	cmd := exec.Command(args)
+func checkApp(name string, args []string) error {
+	cmd := exec.Command(name, args...)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
