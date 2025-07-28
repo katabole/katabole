@@ -1,3 +1,5 @@
+//go:build integration
+
 package main
 
 import (
@@ -10,6 +12,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+// skipIfMissingTools skips the test if any of the provided CLI tools are not
+// found on the host system. This prevents integration tests from failing on
+// minimal CI environments that lack Docker, Task, Node, etc.
+func skipIfMissingTools(t *testing.T, tools ...string) {
+	t.Helper()
+	for _, tool := range tools {
+		if _, err := exec.LookPath(tool); err != nil {
+			t.Skipf("skipping test – required tool %q not found", tool)
+		}
+	}
+}
 
 var kataboleBin string
 
@@ -98,6 +112,8 @@ func runCommand(dir, name string, args ...string) error {
 }
 
 func TestGenerateFromKbexample(t *testing.T) {
+	// Ensure required external tooling exists; otherwise skip.
+	skipIfMissingTools(t, "docker", "task", "npm", "npx")
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "kbexample")
 	defer runCommand(outputPath, "docker", "compose", "down")
@@ -148,6 +164,8 @@ func TestGenerateFromKbexample(t *testing.T) {
 // Happy-path flag tests for the katabole-gen-testing template
 
 func TestGenerateFromGenTesting_DefaultBranch(t *testing.T) {
+	// Integration test prerequisites
+	skipIfMissingTools(t, "git", "docker", "task")
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "test-output")
 
@@ -199,6 +217,8 @@ func TestGenerateFromGenTesting_Branch(t *testing.T) {
 }
 
 func TestGenerateFromGenTesting_Tag(t *testing.T) {
+	// Integration test prerequisites
+	skipIfMissingTools(t, "git", "docker", "task")
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "test-output")
 
