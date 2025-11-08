@@ -25,6 +25,7 @@ func init() {
 	genCmd.MarkFlagRequired("title-name")
 	genCmd.Flags().String("template-repository", "https://github.com/katabole/kbexample", "Git repository URL to clone as a template")
 	genCmd.Flags().String("template-ref", "", "Git reference (commit hash or tag) to check out after cloning")
+	genCmd.Flags().Bool("skip-setup", false, "Skip running 'task setup' after generation")
 	rootCmd.AddCommand(genCmd)
 }
 
@@ -156,9 +157,27 @@ var (
 				return err
 			}
 
-			fmt.Printf(`Done!
+			skipSetup, err := cmd.Flags().GetBool("skip-setup")
+			if err != nil {
+				return err
+			}
 
-Next:
+			if !skipSetup {
+				if err := runTaskSetup(repoName); err != nil {
+					fmt.Printf("\nWarning: 'task setup' failed: %v\n", err)
+					fmt.Printf("\nYou can run it manually with:\n")
+					fmt.Printf("	cd %s && task setup\n\n", repoName)
+				} else {
+					fmt.Printf("\nSetup complete! Your application is ready.\n")
+					fmt.Printf("\nNext:\n")
+					fmt.Printf("	cd %s && task dev\n\n", repoName)
+					return nil
+				}
+			} else {
+				fmt.Printf("Done! (setup skipped)\n\n")
+			}
+
+			fmt.Printf(`Next:
 	cd ` + repoName + ` && task setup
 
 Ensure you have the following installed:
@@ -244,6 +263,16 @@ func checkApp(name string, args []string) error {
 		return err
 	}
 	return nil
+}
+
+// runTaskSetup executes 'task setup' in the generated project directory
+func runTaskSetup(dir string) error {
+	fmt.Println("\nRunning 'task setup' in generated project...")
+	cmd := exec.Command("task", "setup")
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 // ValidateRepoName returns true if the repo name contains only alphanumerics, dashes, or underscores.
