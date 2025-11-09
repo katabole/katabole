@@ -245,7 +245,7 @@ func TestGenerateFromGenTesting_Tag(t *testing.T) {
 
 func TestTaskSetupRuns(t *testing.T) {
 	// Ensure required external tooling exists; otherwise skip.
-	skipIfMissingTools(t, "git", "task", "docker")
+	skipIfMissingTools(t, "git", "task", "docker", "npm")
 	tmpDir := t.TempDir()
 	outputPath := filepath.Join(tmpDir, "kbexample")
 
@@ -270,10 +270,11 @@ func TestTaskSetupRuns(t *testing.T) {
 		t.Errorf("import path not replaced in generated main.go")
 	}
 
-	// Verify that essential files exist
-	taskfilePath := filepath.Join(outputPath, "Taskfile.yml")
-	if _, err := os.Stat(taskfilePath); os.IsNotExist(err) {
-		t.Errorf("expected Taskfile.yml to exist after generation")
+	// Verify that task setup ran by checking if node_modules exists
+	// (npm install is part of the setup task)
+	nodeModulesPath := filepath.Join(outputPath, "node_modules")
+	if _, err := os.Stat(nodeModulesPath); os.IsNotExist(err) {
+		t.Errorf("expected node_modules to exist after task setup, but it doesn't")
 	}
 }
 
@@ -305,9 +306,9 @@ func TestTaskSetupSkip(t *testing.T) {
 		t.Errorf("import path not replaced in generated main.go")
 	}
 
-	// Verify that essential files exist
-	taskfilePath := filepath.Join(outputPath, "Taskfile.yml")
-	if _, err := os.Stat(taskfilePath); os.IsNotExist(err) {
-		t.Errorf("expected Taskfile.yml to exist after generation")
+	// Verify that task setup did NOT run by checking that node_modules does NOT exist
+	nodeModulesPath := filepath.Join(outputPath, "node_modules")
+	if _, err := os.Stat(nodeModulesPath); err == nil {
+		t.Errorf("expected node_modules to NOT exist when --skip-setup is used, but it does")
 	}
 }
