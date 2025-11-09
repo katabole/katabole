@@ -177,15 +177,6 @@ var (
 				fmt.Printf("Done! (setup skipped)\n\n")
 			}
 
-			fmt.Printf(`Next:
-	cd ` + repoName + ` && task setup
-
-Ensure you have the following installed:
-  - Go https://go.dev/doc/install
-  - Task https://taskfile.dev/installation/
-  - Docker https://www.docker.com/products/docker-desktop/
-`)
-
 			return nil
 		},
 	}
