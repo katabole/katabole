@@ -242,3 +242,73 @@ func TestGenerateFromGenTesting_Tag(t *testing.T) {
 		t.Errorf("import path not replaced on tag: got %q", data)
 	}
 }
+
+func TestTaskSetupRuns(t *testing.T) {
+	// Ensure required external tooling exists; otherwise skip.
+	skipIfMissingTools(t, "git", "task", "docker", "npm")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "kbexample")
+
+	// Generate without --skip-setup flag (default behavior should run task setup)
+	err := runCommand(tmpDir, kataboleBin, "gen",
+		"--import-path", "github.com/test/kbexample",
+		"--title-name", "KBExample",
+		"--template-repository", "https://github.com/LingEnOwO/kbexample",
+		"-n", "github.com/test/kbexample",
+	)
+	if err != nil {
+		t.Fatalf("katabole gen failed: %v", err)
+	}
+
+	// Verify that the files were generated correctly
+	mainGoPath := filepath.Join(outputPath, "main.go")
+	data, err := os.ReadFile(mainGoPath)
+	if err != nil {
+		t.Fatalf("cannot read main.go: %v", err)
+	}
+	if !bytes.Contains(data, []byte("github.com/test/kbexample")) {
+		t.Errorf("import path not replaced in generated main.go")
+	}
+
+	// Verify that task setup ran by checking if node_modules exists
+	// (npm install is part of the setup task)
+	nodeModulesPath := filepath.Join(outputPath, "node_modules")
+	if _, err := os.Stat(nodeModulesPath); os.IsNotExist(err) {
+		t.Errorf("expected node_modules to exist after task setup, but it doesn't")
+	}
+}
+
+func TestTaskSetupSkip(t *testing.T) {
+	// Ensure required external tooling exists; otherwise skip.
+	skipIfMissingTools(t, "git", "task")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "kbexample")
+
+	// Generate with --skip-setup flag
+	err := runCommand(tmpDir, kataboleBin, "gen",
+		"--import-path", "github.com/test/kbexample",
+		"--title-name", "KBExample",
+		"--template-repository", "https://github.com/LingEnOwO/kbexample",
+		"--skip-setup",
+		"-n", "github.com/test/kbexample",
+	)
+	if err != nil {
+		t.Fatalf("katabole gen failed: %v", err)
+	}
+
+	// Verify that the files were generated correctly
+	mainGoPath := filepath.Join(outputPath, "main.go")
+	data, err := os.ReadFile(mainGoPath)
+	if err != nil {
+		t.Fatalf("cannot read main.go: %v", err)
+	}
+	if !bytes.Contains(data, []byte("github.com/test/kbexample")) {
+		t.Errorf("import path not replaced in generated main.go")
+	}
+
+	// Verify that task setup did NOT run by checking that node_modules does NOT exist
+	nodeModulesPath := filepath.Join(outputPath, "node_modules")
+	if _, err := os.Stat(nodeModulesPath); err == nil {
+		t.Errorf("expected node_modules to NOT exist when --skip-setup is used, but it does")
+	}
+}
