@@ -21,6 +21,9 @@ stable packages, and conventions. As a developer you learn how it fits together;
 It's productive because in a matter of minutes, you're up and running. It's timeless because the code is yours. Katabole
 may upgrade or swap out a thing or two (rarely, I hope), but your code (at least the Go part) will continue to build.
 
+## IDE Instructions
+If you prefer to use an IDE such as VSCode or Cursor, refer to the [IDE Setup Guide](IDE-SETUP.md).
+
 ## Quick Start
 
 Prerequisites: [Go](https://go.dev/doc/install), [Node](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [Task](https://taskfile.dev/installation/), and [Docker](https://docs.docker.com/get-docker/).
