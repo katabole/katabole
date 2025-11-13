@@ -9,7 +9,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -100,6 +102,77 @@ func TestRepoNameValidation(t *testing.T) {
 	for _, s := range invalid {
 		assert.Falsef(t, ValidateRepoName(s), "expected %q to be invalid", s)
 	}
+}
+
+func TestGetLatestTag(t *testing.T) {
+	skipIfMissingTools(t, "git")
+
+	// Create a temporary git repository with tags
+	tmpDir := t.TempDir()
+
+	// Initialize git repo
+	if err := runCommand(tmpDir, "git", "init"); err != nil {
+		t.Fatalf("failed to init git repo: %v", err)
+	}
+
+	// Configure git user for commits
+	if err := runCommand(tmpDir, "git", "config", "user.email", "test@example.com"); err != nil {
+		t.Fatalf("failed to config git email: %v", err)
+	}
+	if err := runCommand(tmpDir, "git", "config", "user.name", "Test User"); err != nil {
+		t.Fatalf("failed to config git name: %v", err)
+	}
+
+	// Create initial commit
+	testFile := filepath.Join(tmpDir, "test.txt")
+	if err := os.WriteFile(testFile, []byte("v1"), 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+	if err := runCommand(tmpDir, "git", "add", "."); err != nil {
+		t.Fatalf("failed to git add: %v", err)
+	}
+	if err := runCommand(tmpDir, "git", "commit", "-m", "first commit"); err != nil {
+		t.Fatalf("failed to commit: %v", err)
+	}
+
+	// Create v0.1.0 tag
+	if err := runCommand(tmpDir, "git", "tag", "v0.1.0"); err != nil {
+		t.Fatalf("failed to create tag v0.1.0: %v", err)
+	}
+
+	// Sleep to ensure different commit timestamps
+	// (Git commit timestamps have 1-second resolution)
+	time.Sleep(1100 * time.Millisecond)
+
+	// Create another commit
+	if err := os.WriteFile(testFile, []byte("v2"), 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+	if err := runCommand(tmpDir, "git", "add", "."); err != nil {
+		t.Fatalf("failed to git add: %v", err)
+	}
+	if err := runCommand(tmpDir, "git", "commit", "-m", "second commit"); err != nil {
+		t.Fatalf("failed to commit: %v", err)
+	}
+
+	// Create v0.2.0 tag (this should be the latest)
+	if err := runCommand(tmpDir, "git", "tag", "v0.2.0"); err != nil {
+		t.Fatalf("failed to create tag v0.2.0: %v", err)
+	}
+
+	// Open the repository with go-git
+	repo, err := git.PlainOpen(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to open repo: %v", err)
+	}
+
+	// Test getLatestTag
+	latestTag, err := getLatestTag(repo)
+	if err != nil {
+		t.Fatalf("getLatestTag failed: %v", err)
+	}
+
+	assert.Equal(t, "v0.2.0", latestTag, "expected latest tag to be v0.2.0")
 }
 
 // runCommand is a helper to run commands inside a given directory
@@ -240,5 +313,44 @@ func TestGenerateFromGenTesting_Tag(t *testing.T) {
 	}
 	if !bytes.Contains(data, []byte("github.com/katabole/test-output")) {
 		t.Errorf("import path not replaced on tag: got %q", data)
+	}
+}
+
+func TestGenerateFromGenTesting_LatestTag(t *testing.T) {
+	// Integration test prerequisites
+	skipIfMissingTools(t, "git", "docker", "task")
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "test-output")
+
+	// Generate without specifying --template-ref, should use latest tag
+	cmd := exec.Command(kataboleBin, "gen",
+		"--template-repository", "https://github.com/katabole/katabole-gen-testing.git",
+		"--import-path", "github.com/katabole/test-output",
+		"--title-name", "TestOutput",
+		"-n", "github.com/katabole/test-output",
+	)
+	cmd.Dir = tmpDir
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		t.Fatalf("generation with auto-latest-tag failed: %v\nstdout: %s\nstderr: %s", err, stdout.String(), stderr.String())
+	}
+
+	// Verify that output mentions using a release
+	output := stdout.String() + stderr.String()
+	if !bytes.Contains([]byte(output), []byte("Using latest release:")) {
+		t.Errorf("expected output to mention 'Using latest release:', got: %s", output)
+	}
+
+	// Verify the generated code has correct import path
+	data, err := os.ReadFile(filepath.Join(outputPath, "main.go"))
+	if err != nil {
+		t.Fatalf("cannot read main.go: %v", err)
+	}
+	if !bytes.Contains(data, []byte("github.com/katabole/test-output")) {
+		t.Errorf("import path not replaced with auto-latest-tag: got %q", data)
 	}
 }

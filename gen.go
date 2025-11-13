@@ -104,12 +104,26 @@ var (
 				return err
 			}
 
-			// User specified a specific commit(hash), branch, or tag to use
-			if templateRef != "" {
-				wt, err := repo.Worktree()
+			wt, err := repo.Worktree()
+			if err != nil {
+				return err
+			}
+
+			// If no template-ref specified, use the latest tag
+			if templateRef == "" {
+				latestTag, err := getLatestTag(repo)
 				if err != nil {
-					return err
+					return fmt.Errorf("error finding latest tag: %v", err)
 				}
+				if latestTag != "" {
+					templateRef = latestTag
+					fmt.Printf("Using latest release: %s\n", latestTag)
+				}
+			}
+
+			// User specified a specific commit(hash), branch, or tag to use,
+			// or we auto-selected the latest tag
+			if templateRef != "" {
 				err = checkoutTemplateRef(wt, templateRef)
 				if err != nil {
 					return fmt.Errorf("error checking out: %v", err)
@@ -171,6 +185,51 @@ Ensure you have the following installed:
 		},
 	}
 )
+
+// getLatestTag finds the most recent tag by commit date in the repository
+func getLatestTag(repo *git.Repository) (string, error) {
+	tags, err := repo.Tags()
+	if err != nil {
+		return "", err
+	}
+
+	var latestTag string
+	var latestCommitTime int64
+
+	err = tags.ForEach(func(ref *plumbing.Reference) error {
+		// Get the tag name (strip refs/tags/ prefix)
+		tagName := ref.Name().Short()
+
+		// Get the commit that the tag points to
+		obj, err := repo.CommitObject(ref.Hash())
+		if err != nil {
+			// Tag might point to an annotated tag object, try to dereference it
+			tagObj, err := repo.TagObject(ref.Hash())
+			if err != nil {
+				return nil // Skip tags we can't resolve
+			}
+			obj, err = tagObj.Commit()
+			if err != nil {
+				return nil // Skip tags we can't resolve
+			}
+		}
+
+		// Compare commit times
+		commitTime := obj.Committer.When.Unix()
+		if commitTime > latestCommitTime {
+			latestCommitTime = commitTime
+			latestTag = tagName
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return latestTag, nil
+}
 
 // git-go lacks a direct way to checkout a "ref"
 // manually try it as a hash, then a branch, then a tag
