@@ -19,4 +19,4 @@ task dev
 ```
 
 # Tips
-It is also strongly recommended that you install the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go) inside of your IDE. This provides IntelliSense features as well support fo testing and debugging.
+It is also strongly recommended that you install the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.go) inside of your IDE. This provides IntelliSense features as well support for testing and debugging.
