@@ -5,8 +5,6 @@ For beginning coders, working in the terminal can be daunting and unfamiliar. ID
 To begin, you'll need to install either [VSCode](https://code.visualstudio.com/) or [Cursor](https://cursor.com). Cursor is a fork of VSCode, with more AI features baked in. Feel free to use whichever one you prefer.
 
 # Quick Start
-After installing your preferred IDE, open the Katabole project inside the project by going to File > Open, then select the location of where you cloned your Katabole fork on your local computer.
-
 Inside of your IDE, go to the menu bar at the top and select "Terminal > New Terminal". Run the following commands (also listed in the [README](README.md)):
 
 ```bash
